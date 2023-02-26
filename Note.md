@@ -91,3 +91,93 @@ export default [
   }
 }
 ```
+
+## Init Tracker
+
+```ts
+// core/index.ts
+
+export default class Tracker {
+  constructor(options) {}
+
+  private initDef() {}
+}
+```
+
+初始化一个`Tracker`类，`constructor`接受一些 options，接下来在`types/index.ts`定义一些类型。
+
+```ts
+// core/index.ts
+
+/**
+ * @requestUrl 接口地址
+ * @historyTracker history上报
+ * @hashTracker hash上报
+ * @domTracker 携带Tracker-key 点击事件上报
+ * @sdkVersionsdk版本
+ * @extra透传字段
+ * @jsError js 和 promise 报错异常上报
+ */
+export interface DefaultOptons {
+  uuid: string | undefined;
+  requestUrl: string | undefined;
+  historyTracker: boolean;
+  hashTracker: boolean;
+  domTracker: boolean;
+  sdkVersion: string | number;
+  extra: Record<string, any> | undefined;
+  jsError: boolean;
+}
+
+//必传参数 requestUrl
+export interface Options extends Partial<DefaultOptons> {
+  requestUrl: string;
+}
+
+//版本
+export enum TrackerConfig {
+  version = "1.0.0",
+}
+```
+
+首先此处`DefaultOptions`定义了`options`的属性，将其使用在`initDef`上，让其初始化配置
+
+```ts
+export default class Tracker {
+  // ...
+  private initDef(): DefaultOptons {
+    return <DefaultOptons>{
+      sdkVersion: TrackerConfig.version,
+      historyTracker: false,
+      hashTracker: false,
+      domTracker: false,
+      jsError: false,
+    };
+  }
+}
+```
+
+其次`Options`则为`constructor`内参数的类型，此处使用`Partial`去扩展`DefaultOptions`，使其内所有参数都变得可选，而`requestUrl`是必写参数，因此再把他加上，同时定义一个`TrackerConfig`储存 version。
+
+最后，在类里面定义一个`data`变量，储存初始化后得到的`options`。
+
+```ts
+import { DefaultOptons, Options, TrackerConfig } from "../types/index";
+
+export default class Tracker {
+  public data: Options;
+  constructor(options: Options) {
+    this.data = Object.assign(this.initDef(), options);
+  }
+
+  private initDef(): DefaultOptons {
+    return <DefaultOptons>{
+      sdkVersion: TrackerConfig.version,
+      historyTracker: false,
+      hashTracker: false,
+      domTracker: false,
+      jsError: false,
+    };
+  }
+}
+```
