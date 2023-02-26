@@ -181,3 +181,108 @@ export default class Tracker {
   }
 }
 ```
+
+## PV(Page View)
+
+PV 页面访问量，即 PageView，用户每次对网站的访问均被记录
+
+主要监听了 history 和 hash
+
+history 的 API 包括：`go`、` back`、`forward`、`pushState`、`replaceState`
+
+hash 可以使用 `hashchange` 监听。
+
+但是对于 history，`popState`可以监听浏览器的前进后退操作（历史记录的上一页和下一页），和 history 方法的`go`、`back`方法，对于`pushState`、`replaceState` 无法有效监听，因此我们在 `utils/pv.ts`重写方法。
+
+```ts
+// utils/pv.ts
+
+export const createHistoryEvent = <T extends keyof History>(type: T) => {
+  const origin = history[type];
+
+  return function (this: any) {
+    const res = origin.apply(this, arguments);
+
+    const e = new Event(type);
+
+    window.dispatchEvent(e);
+
+    return res;
+  };
+};
+```
+
+> Event 创建自定义事件
+>
+> dispatchEvent 派发事件
+>
+> addEventListener 监听事件
+>
+> removeEventListener 删除事件
+>
+> 其实也就是 发布订阅模式
+
+这里首先先获取原先 history 里面对应的方法（例如`go`方法），获取到以后返回一个高阶函数，里面调用`origin`方法并获取结果`res`并返回。然后在里面创建自定义事件然后将它 dispatch 出去。
+
+再回到`core/index.ts`调用它
+
+```tsx
+// core/index.ts
+
+export default class Tracker {
+  // ...
+  private initDef(): DefaultOptons {
+    window.history["pushState"] = createHistoryEvent("pushState");
+    window.history["replaceState"] = createHistoryEvent("replaceState");
+  }
+  // ...
+}
+```
+
+这样，我们就修改了原来 history 上的方法，使其变的可以被监听。
+
+接下来可以根据用户的选项，来进行调用决定是否监听 history 和 hash。
+
+```ts
+export default class Tracker {
+  // ...
+  private captureEvent<T>(
+    mouseEventList: string[],
+    targetKey: string,
+    data?: T
+  ) {
+    mouseEventList.forEach((event) =>
+      window.addEventListener(event, () => {
+        console.log("Tracking!");
+      })
+    );
+  }
+
+  private installTracker() {
+    if (this.data.historyTracker)
+      this.captureEvent(
+        ["pushState", "replaceState", "popstate"],
+        "history-pv"
+      );
+
+    if (this.data.hashTracker) this.captureEvent(["hashchange"], "hash-pv");
+  }
+}
+```
+
+在这里的第二个参数`targetKey`，通常是与后端协商的。例如，触发监听后，需要给回一些东西。
+
+新建一个`index.html`，引入打包好的 js 文件，并启用 tracker。
+
+```html
+<script src="./dist/index.js"></script>
+<script>
+  new tracker({
+    historyTracker: true,
+  });
+</script>
+```
+
+通过 live server 打开 html 文件，在控制台输入如 `history.pushState("123", "", "/a")`，会看到控制台输出`Tracking！`。表面已经成功监听，若此时点击返回上一页按钮，控制台也会输出语句。
+
+
