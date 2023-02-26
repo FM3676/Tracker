@@ -285,4 +285,23 @@ export default class Tracker {
 
 通过 live server 打开 html 文件，在控制台输入如 `history.pushState("123", "", "/a")`，会看到控制台输出`Tracking！`。表面已经成功监听，若此时点击返回上一页按钮，控制台也会输出语句。
 
+## UV(Unique Visitor)
+
+Unique Visitor，访问网站的一台电脑客户端为一个访客。
+用户唯一标识：可以在登陆过后生成一个 UUId 后储存在 localStorage 里面，然后上报。也可以使用 canvas 指纹追踪技术。
+登录之后，后台会返回一个 id，所以我们暴露一个`setUserId`的方法，用于设置并储存 id。
+
+```ts
+export default class Tracker {
+  public setUserId<T extends DefaultOptons["uuid"]>(uuid: T) {
+    this.data.uuid = uuid;
+  }
+
+  public setExtra<T extends DefaultOptons["extra"]>(extra: T) {
+    this.data.extra = extra;
+  }
+}
+```
+
+暴露两个方法，用于设置id，和用户的一些自定义选项extra。
 

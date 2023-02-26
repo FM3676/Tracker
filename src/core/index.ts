@@ -21,6 +21,14 @@ export default class Tracker {
     };
   }
 
+  public setUserId<T extends DefaultOptons["uuid"]>(uuid: T) {
+    this.data.uuid = uuid;
+  }
+
+  public setExtra<T extends DefaultOptons["extra"]>(extra: T) {
+    this.data.extra = extra;
+  }
+
   private captureEvent<T>(
     mouseEventList: string[],
     targetKey: string,
@@ -39,5 +47,7 @@ export default class Tracker {
         ["pushState", "replaceState", "popstate"],
         "history-pv"
       );
+
+    if (this.data.hashTracker) this.captureEvent(["hashchange"], "hash-pv");
   }
 }
