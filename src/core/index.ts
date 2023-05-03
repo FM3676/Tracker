@@ -76,6 +76,35 @@ export default class Tracker {
     if (this.data.hashTracker) this.captureEvent(["hashchange"], "hash-pv");
 
     if (this.data.domTracker) this.targetKeyReport();
+
+    if (this.data.jsError) this.jsError();
+  }
+
+  private jsError() {
+    this.errorEvent();
+    this.promiseReject();
+  }
+
+  private errorEvent() {
+    window.addEventListener("error", (event) =>
+      this.reportTracker({
+        event: "error",
+        targetKey: "message",
+        message: event.message,
+      })
+    );
+  }
+
+  private promiseReject() {
+    window.addEventListener("unhandledrejection", (event) =>
+      event.promise.catch((error) =>
+        this.reportTracker({
+          event: "promiseReject",
+          targetKey: "message",
+          message: error,
+        })
+      )
+    );
   }
 
   private reportTracker<T>(data: T) {

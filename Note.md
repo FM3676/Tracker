@@ -457,3 +457,45 @@ export default class Tracker {
 if (this.data.domTracker) this.targetKeyReport();
 ```
 
+## JavaScript Error Tracker
+
+对于 JavaScript 的报错，普通错误会触发`error`事件，`promise`错误则会触发`unhandledrejection`事件。
+
+```ts
+export default class Tracker {
+  // ...
+  private jsError() {
+    this.errorEvent();
+    this.promiseReject();
+  }
+
+  private errorEvent() {
+    window.addEventListener("error", (event) =>
+      this.reportTracker({
+        event: "error",
+        targetKey: "message",
+        message: event.message,
+      })
+    );
+  }
+
+  private promiseReject() {
+    window.addEventListener("unhandledrejection", (event) =>
+      event.promise.catch((error) =>
+        this.reportTracker({
+          event: "promiseReject",
+          targetKey: "message",
+          message: error,
+        })
+      )
+    );
+  }
+  // ...
+}
+```
+
+将`jsError`添加到`installTracker`
+
+```ts
+if (this.data.jsError) this.jsError();
+```
