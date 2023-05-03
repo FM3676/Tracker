@@ -350,3 +350,62 @@ export default class Tracker {
 ```
 
 然后先新增一个方法`sendTracker`用于手动上报，其次则将`captureEvent`修改，使其完成自动上报。
+
+## Write an API to test our Tracker
+
+现在来写个 API 测试一下 Tracker 是否有效果
+
+```js
+// index.html
+new tracker({
+  requestUrl: "http://localhost:9000/tracker",
+  historyTracker: true,
+});
+```
+
+第一步，先在`index.html`补全`requestUrl`。
+第二步，建立一个 express 服务器。
+
+```js
+// server/index.js
+const express = require("express");
+const cors = require("cors");
+
+const app = express();
+
+app.use(cors());
+
+app.use(express.urlencoded({ extended: false }));
+
+app.post("/tracker", (req, res) => {
+  console.log(req.body);
+  res.send(200);
+});
+
+app.listen(9000, () => console.log("Successfully listen on 9000."));
+```
+
+输入`node index.js`运行服务器后，使用 Live Server 跑起 `index.html`。再到控制台，输入`history.pushState('adsd','','/a')`。
+这个时候到 Network 网络部分，可以看到 tracker 以 ping 的形式发送请求。
+
+![Network-Trakcer-ping](/Users/mac/P/Tracker/Markdown-Image/Network-Trakcer-ping.png)
+
+点到载荷也可以看到表单数据：
+
+```json
+{
+  "sdkVersion": "1.0.0",
+  "historyTracker": true,
+  "hashTracker": false,
+  "domTracker": false,
+  "jsError": false,
+  "requestUrl": "http://localhost:9000/tracker",
+  "event": "pushState",
+  "targetKey": "history-pv",
+  "time": 1683125100046
+}
+```
+
+来到 Express 后台，可以看到上报的数据，evnet 为`pushState`，如果点一下浏览器的返回按钮，会发现也上报了，event 为`popstate`。
+
+![Express-backend](/Users/mac/P/Tracker/Markdown-Image/Express-backend.png)

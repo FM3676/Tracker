@@ -48,7 +48,7 @@ export default class Tracker {
   private installTracker() {
     if (this.data.historyTracker)
       this.captureEvent(
-        ["pushState", "replaceState", "popstate"],
+        ["pushState", "replaceState", "popState"],
         "history-pv"
       );
 
