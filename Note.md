@@ -409,3 +409,51 @@ app.listen(9000, () => console.log("Successfully listen on 9000."));
 来到 Express 后台，可以看到上报的数据，evnet 为`pushState`，如果点一下浏览器的返回按钮，会发现也上报了，event 为`popstate`。
 
 ![Express-backend](/Users/mac/P/Tracker/Markdown-Image/Express-backend.png)
+
+## DOM Event Tracker
+
+DOM 事件监听。主要是给需要监听的元素添加一个属性`target-key`用来区分是否需要监听。
+
+```html
+<button target-key="btn">Button</button> <button>No Tracker</button>
+```
+
+首先，先准备好要监听的事件列表
+
+```ts
+const MouseEventList: string[] = [
+  "click",
+  "dblclick",
+  "contextmenu",
+  "mousedown",
+  "mouseup",
+  "mouseenter",
+  "mouseout",
+  "mouseover",
+];
+```
+
+然后，遍历事件列表，做全局监听，如果发现元素有`target-key`属性，就进行上报
+
+```ts
+export default class Tracker {
+  // ...
+  private targetKeyReport() {
+    MouseEventList.forEach((ev) =>
+      window.addEventListener(ev, (e) => {
+        const target = e.target as HTMLElement;
+        const targetKey = target.getAttribute("target-key");
+        if (targetKey) this.reportTracker({ event: ev, targetKey });
+      })
+    );
+  }
+  // ...
+}
+```
+
+最后，再将`targetKeyReport`添加到`installTracker`
+
+```ts
+if (this.data.domTracker) this.targetKeyReport();
+```
+
