@@ -29,6 +29,10 @@ export default class Tracker {
     this.data.extra = extra;
   }
 
+  public sendTracker<T>(data: T) {
+    this.reportTracker(data);
+  }
+
   private captureEvent<T>(
     mouseEventList: string[],
     targetKey: string,
@@ -36,7 +40,7 @@ export default class Tracker {
   ) {
     mouseEventList.forEach((event) =>
       window.addEventListener(event, () => {
-        console.log("Tracking!");
+        this.reportTracker({ event, targetKey, data });
       })
     );
   }
@@ -49,5 +53,14 @@ export default class Tracker {
       );
 
     if (this.data.hashTracker) this.captureEvent(["hashchange"], "hash-pv");
+  }
+
+  private reportTracker<T>(data: T) {
+    const params = Object.assign(this.data, data, {
+      time: new Date().getTime(),
+    });
+    let headers = { type: "application/x-www-form-urlencoded" };
+    let blob = new Blob([JSON.stringify(params)], headers);
+    navigator.sendBeacon(this.data.requestUrl, blob);
   }
 }

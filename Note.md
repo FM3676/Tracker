@@ -303,5 +303,50 @@ export default class Tracker {
 }
 ```
 
-暴露两个方法，用于设置id，和用户的一些自定义选项extra。
+暴露两个方法，用于设置 id，和用户的一些自定义选项 extra。
 
+## reportTracker
+
+现在来使用 `navigator.sendBeacon` 进行上报。
+
+> 为什么不适用 `XMLHttpRequest`？因为页面关闭后，`navigator.sendBeacon`仍会进行上传，`XMLHttpRequest` 不一定会
+
+```ts
+export default class Tracker {
+  // ....
+  private reportTracker<T>(data: T) {
+    const params = Object.assign(this.data, data, {
+      time: new Date().getTime(),
+    });
+    let headers = { type: "application/x-www-form-urlencoded" };
+    let blob = new Blob([JSON.stringify(params)], headers);
+    navigator.sendBeacon(this.data.requestUrl, blob);
+  }
+}
+```
+
+`reportTracker`接受 `data`，然后与 `this.data` 和 现在的时间组成一个新的 object `params`。设置好 `headers` 后生成一个 `blob`，用作`navigator.sendBeacon`的第二个参数。
+
+```ts
+export default class Tracker {
+  // ....
+  public sendTracker<T>(data: T) {
+    this.reportTracker(data);
+  }
+
+  private captureEvent<T>(
+    mouseEventList: string[],
+    targetKey: string,
+    data?: T
+  ) {
+    mouseEventList.forEach((event) =>
+      window.addEventListener(event, () => {
+        this.reportTracker({ event, targetKey, data });
+      })
+    );
+  }
+  //...
+}
+```
+
+然后先新增一个方法`sendTracker`用于手动上报，其次则将`captureEvent`修改，使其完成自动上报。
